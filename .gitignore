@@ -3,5 +3,7 @@
 *.env
 secrets/
 data/audit/
+
+# Python artifacts
 __pycache__/
 *.pyc
