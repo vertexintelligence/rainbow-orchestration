@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vertexintelligence.github.io/rainbow-orchestration/schemas/daily_log.schema.json",
+  "title": "Daily Log (NANUS) Schema v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "id", "project", "source", "log_date", "captured_at", "raw", "signals"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "daily_log.v1",
+      "description": "Schema version identifier for validation and migration."
+    },
+
+    "id": {
+      "type": "string",
+      "minLength": 6,
+      "description": "Unique log id (recommended: DL-YYYYMMDD-HHMM-<project>)"
+    },
+
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "code"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "code": { "type": "string", "minLength": 1, "description": "Canonical short code, e.g., Barnhart" }
+      }
+    },
+
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system"],
+      "properties": {
+        "system": {
+          "type": "string",
+          "enum": ["buildertrend", "manual", "email", "sms", "other"]
+        },
+        "system_ref": {
+          "type": "string",
+          "description": "Upstream identifier (Buildertrend daily log id, email id, etc.)"
+        },
+        "ingest_trace_id": {
+          "type": "string",
+          "description": "Trace id for pipeline correlation"
+        }
+      }
+    },
+
+    "log_date": {
+      "type": "string",
+      "format": "date",
+      "description": "The day the work occurred (local jobsite date)."
+    },
+
+    "captured_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this record was captured/ingested by the system."
+    },
+
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "email": { "type": "string", "format": "email" }
+      }
+    },
+
+    "raw": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Raw upstream payload or a pointer to it.",
+      "properties": {
+        "drive_path": { "type": "string", "description": "Pointer to RAW file stored in Drive." },
+        "payload": { "type": "object", "additionalProperties": true, "description": "Optional embedded raw payload." }
+      },
+      "anyOf": [
+        { "required": ["drive_path"] },
+        { "required": ["payload"] }
+      ]
+    },
+
+    "parsed": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Optional normalized fields extracted from raw.",
+      "properties": {
+        "weather": { "type": "string" },
+        "crew": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "company": { "type": "string" },
+              "count": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
+        "notes": { "type": "string" },
+        "photos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["uri"],
+            "properties": {
+              "uri": { "type": "string" },
+              "caption": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+
+    "signals": {
+      "type": "array",
+      "minItems": 0,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["signal_id", "type", "priority", "title", "created_at"],
+        "properties": {
+          "signal_id": { "type": "string", "minLength": 8, "description": "SIG-YYYYMMDD-HHMM-<project>-<type>" },
+          "type": {
+            "type": "string",
+            "enum": ["task", "blocker", "risk", "decision", "procurement", "inspection", "update", "issue", "change_order"]
+          },
+          "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
+          "title": { "type": "string", "minLength": 1 },
+          "details": { "type": "string" },
+          "owner": { "type": "string" },
+          "due_date": { "type": "string", "format": "date" },
+          "links": { "type": "array", "items": { "type": "string" } },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "redactions_applied": { "type": "boolean" },
+        "sensitivity": { "type": "string", "enum": ["low", "internal", "confidential"] }
+      }
+    }
+  }
+}
