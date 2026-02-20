@@ -8,7 +8,7 @@ echo "[1] SERVICES"
 docker compose ps
 echo
 echo "[2] QUICK HEALTH"
-for p in 8786 8787 8788; do
+for p in 8786 8787 8788 8789; do
   if curl -fsS "http://localhost:${p}/docs" >/dev/null 2>&1; then
     echo "port ${p}: docs OK"
   else
