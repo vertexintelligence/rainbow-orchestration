@@ -1,0 +1,7 @@
+# Secrets / local env
+.env
+*.env
+secrets/
+data/audit/
+__pycache__/
+*.pyc
