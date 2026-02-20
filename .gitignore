@@ -7,3 +7,16 @@ data/audit/
 # Python artifacts
 __pycache__/
 *.pyc
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtualenv
+.venv/
+venv/
+
+# OS
+.DS_Store
