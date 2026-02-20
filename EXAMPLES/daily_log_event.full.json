@@ -1,0 +1,342 @@
+{
+  "schema_name": "DUNBAR_OS::DAILY_LOG_EVENT",
+  "schema_version": "1.0.0",
+  "status": "CANON_LOCKED",
+  "id_contract": {
+    "event_id": "DL-PUT-20260123-004",
+    "examples": ["DL-PUT-20260123-004", "DL-WB-20260219-001"]
+  },
+  "source_contract": {
+    "source_type": "chat",
+    "source_ref": {
+      "thread_name": "putnam-remodel-daily",
+      "message_id": "chat-5588",
+      "buildertrend_url": "https://example.invalid/buildertrend/log/5588",
+      "file_refs": ["file://photo-set-5588"]
+    },
+    "captured_at_local": "2026-01-23T17:30:00Z",
+    "captured_by": "human",
+    "captured_by_name": "Field Coordinator"
+  },
+  "project": {
+    "project_id": "proj-put-009",
+    "project_code": "PUT",
+    "project_name": "Putnam Kitchen + Terrace",
+    "job_status": "open",
+    "site_address": {
+      "line1": "245 Harbor St",
+      "city": "Sample City",
+      "state": "SC",
+      "zip": "29400"
+    },
+    "client_display_name": "Client B",
+    "internal_team": [
+      {
+        "person_id": "pm-111",
+        "name": "Morgan Lee",
+        "role_title": "Project Manager",
+        "contact": {
+          "email": "morgan.lee@example.com",
+          "phone": "8435551001"
+        }
+      },
+      {
+        "person_id": "su-112",
+        "name": "Riley Shaw",
+        "role_title": "Site Superintendent",
+        "contact": {
+          "email": "riley.shaw@example.com",
+          "phone": "8435551002"
+        }
+      }
+    ],
+    "sub_vendor_context": [
+      {
+        "company_name": "Coastal Plumbing Co",
+        "primary_contact_name": "Pat Rivers",
+        "trade_mtif": "PLMB",
+        "role_title": "Craftsman",
+        "portal_name": "Artisan Portal",
+        "email": "pat.rivers@coastal-plumbing.example.com",
+        "phone": "8435551100"
+      }
+    ]
+  },
+  "log": {
+    "log_date_local": "2026-01-23",
+    "log_time_local": "17:30",
+    "timezone": "America/New_York",
+    "title": {
+      "format_law": "DL-TITLE-50 v1.1",
+      "title_text": "MEP rough-in progressed with inspection prep",
+      "char_count": 42,
+      "is_compliant": true
+    },
+    "phase": {
+      "phase_id": "05_SYSTEMS_MEP",
+      "phase_color": "Green",
+      "authority_note": "Verified against phase map."
+    },
+    "trade": {
+      "trade_mtif": "PLMB",
+      "trade_label": "Plumbing",
+      "area_zone": "Kitchen Core"
+    },
+    "signal_tags": {
+      "exact_3_required": true,
+      "tags": ["mep", "inspection", "rough-in"]
+    },
+    "visibility": {
+      "client_visible_sections": ["client_notes"],
+      "internal_only_sections": ["execution_notes", "risk_register", "financial_flags"]
+    }
+  },
+  "narrative": {
+    "client_notes": {
+      "title": "CLIENT NOTES — Today’s Chapter",
+      "text": "Rough-in advanced and inspection package is queued."
+    },
+    "execution_notes": {
+      "title": "EXECUTION NOTES (INTERNAL — EXEC_SPARK)",
+      "standard": "Patrick-style bullets",
+      "now": ["Completed pressure test prep"],
+      "block": ["Awaiting city inspector window"],
+      "next": ["Finalize valve labeling", "Upload test photos"],
+      "contacts": ["Pat Rivers", "Riley Shaw"]
+    }
+  },
+  "truth_planes": {
+    "law": "Three-Plane Truth Law",
+    "plane_1_observed": {
+      "description": "Plumbing branch lines installed in kitchen wall cavity.",
+      "evidence_refs": ["photo:put-001", "photo:put-002"]
+    },
+    "plane_2_verified": {
+      "description": "Pressure test setup verified by superintendent.",
+      "verification_method": "onsite witness + photo review",
+      "verified_by": "Riley Shaw",
+      "evidence_refs": ["doc:test-checklist-23"]
+    },
+    "plane_3_inferred": {
+      "description": "Inspection will likely pass if fixture spacing remains unchanged.",
+      "assumptions": ["No design revision overnight"],
+      "risk_if_wrong": "high"
+    }
+  },
+  "work_items": {
+    "tasks": [
+      {
+        "task_id_external": "BT-99211",
+        "system": "buildertrend",
+        "task_title": "Complete plumbing rough-in photos",
+        "description": "Capture and upload before-inspection set.",
+        "phase_id": "05_SYSTEMS_MEP",
+        "trade_mtif": "PLMB",
+        "owner": {
+          "type": "sub_vendor",
+          "name": "Pat Rivers",
+          "company": "Coastal Plumbing Co"
+        },
+        "start_date": "2026-01-23",
+        "due_date": "2026-01-24",
+        "status": "in_progress",
+        "evidence_required": ["photos_before", "photos_during", "docs"],
+        "schedule_link": {
+          "is_linked": true,
+          "schedule_item_id": "SCH-233",
+          "schedule_item_title": "Plumbing rough-in inspection prep",
+          "planned_window": {
+            "start": "2026-01-23",
+            "end": "2026-01-24"
+          }
+        },
+        "dependencies": ["BT-99198"],
+        "tags": ["plumbing", "photos", "inspection"]
+      }
+    ],
+    "schedule_signals": [
+      {
+        "signal_type": "inspect",
+        "schedule_item_title": "City plumbing inspection",
+        "phase_id": "05_SYSTEMS_MEP",
+        "trade_mtif": "PLMB",
+        "recommended_window": {
+          "start": "2026-01-24",
+          "end": "2026-01-25"
+        },
+        "reason": "All visible rough-in milestones met.",
+        "confidence": 0.84
+      }
+    ],
+    "rfis": [
+      {
+        "rfi_id_external": "RFI-77",
+        "question": "Confirm final dishwasher drain routing at island.",
+        "needed_by": "2026-01-24",
+        "assigned_to": "Design Lead",
+        "status": "sent",
+        "attachments": ["doc:rfi-77-markup"]
+      }
+    ],
+    "deliveries": [
+      {
+        "item_name": "Brass shutoff valves",
+        "manufacturer": "Sample Mfg",
+        "model": "SV-900",
+        "dimensions": "1/2 in",
+        "finish_color": "Brushed Brass",
+        "qty": 12,
+        "unit": "ea",
+        "location_on_site": "Garage rack A",
+        "delivery_date_target": "2026-01-24",
+        "photo_refs": ["photo:delivery-22"],
+        "doc_refs": ["doc:packing-slip-22"]
+      }
+    ]
+  },
+  "quality": {
+    "quality_standard": "West Brown Luxury Standard",
+    "checklist": [
+      {
+        "item": "Pressure test assembly checked",
+        "status": "pass",
+        "notes": "All joints stable at observation window."
+      }
+    ],
+    "photos_required": {
+      "before": true,
+      "during": true,
+      "after": true,
+      "count_minimum": 6,
+      "elevation_coverage_required": true
+    }
+  },
+  "risk_register": [
+    {
+      "risk_id": "RISK-004",
+      "category": "inspection",
+      "description": "Inspection delay if routing revision required.",
+      "impact_level": "high",
+      "urgency": "medium",
+      "mitigation": "Pre-brief inspector and provide marked plan.",
+      "owner": "Morgan Lee",
+      "due_date": "2026-01-24",
+      "status": "watch",
+      "evidence_refs": ["doc:rfi-77-markup"]
+    }
+  ],
+  "compliance": {
+    "sub_vendor_documents": [
+      {
+        "doc_type": "GeneralLiability",
+        "required": true,
+        "received": true,
+        "expires_on": "2026-12-31",
+        "file_refs": ["doc:gl-policy-2026"]
+      }
+    ],
+    "permits_inspections": [
+      {
+        "type": "Plumbing Rough Inspection",
+        "jurisdiction": "Sample City",
+        "scheduled_on": "2026-01-24",
+        "result": "pending",
+        "notes": "Targeting morning slot."
+      }
+    ]
+  },
+  "financial_flags": {
+    "is_financial_data_present": true,
+    "cost_impact": {
+      "status": "potential",
+      "range_low": 150,
+      "range_high": 300,
+      "notes": "Potential accessory fitting adders."
+    },
+    "po_required": true,
+    "bill_expected": true,
+    "cost_code_recommendations": [
+      {
+        "phase_id": "05_SYSTEMS_MEP",
+        "cost_code": "MEP-PLMB-001",
+        "reason": "Inspection prep and accessory updates."
+      }
+    ]
+  },
+  "communications": {
+    "outbound_messages": [
+      {
+        "channel": "email",
+        "recipient": {
+          "name": "Client B",
+          "email": "client.b@example.com",
+          "phone": "8435551212",
+          "company": "Private Client"
+        },
+        "subject": "Daily update: plumbing rough-in progress",
+        "body": "Inspection prep is underway and photos are queued.",
+        "send_rule": "manual",
+        "status": "draft",
+        "thread_refs": ["thread:client-weekly"]
+      }
+    ],
+    "inbound_messages": [
+      {
+        "channel": "buildertrend_message",
+        "from": "Design Lead",
+        "received_at": "2026-01-23T16:40:00Z",
+        "summary": "Reviewing dishwasher drain routing question.",
+        "attachments": []
+      }
+    ]
+  },
+  "attachments": {
+    "photos": [
+      {
+        "ref": "photo:put-001",
+        "caption": "Kitchen wall plumbing rough-in",
+        "captured_at": "2026-01-23T15:20:00Z",
+        "location": "Kitchen",
+        "category": "during"
+      }
+    ],
+    "files": [
+      {
+        "ref": "doc:test-checklist-23",
+        "filename": "pressure-test-checklist.pdf",
+        "type": "pdf",
+        "notes": "Internal QA record"
+      }
+    ]
+  },
+  "dispatch": {
+    "requires_human_confirm": true,
+    "ready_to_publish": true,
+    "publish_targets": {
+      "buildertrend_daily_log": true,
+      "buildertrend_tasks": false,
+      "buildertrend_schedule": false,
+      "client_update": false
+    },
+    "next_actions": [
+      {
+        "action": "Send client summary after PM approval",
+        "owner": "Morgan Lee",
+        "due_date": "2026-01-24",
+        "priority": "high"
+      }
+    ]
+  },
+  "audit": {
+    "created_at": "2026-01-23T17:30:00Z",
+    "updated_at": "2026-01-23T17:30:00Z",
+    "version_history": [
+      {
+        "version": "1.0.0",
+        "changed_by": "Field Coordinator",
+        "changed_at": "2026-01-23T17:30:00Z",
+        "notes": "Captured from daily summary channel."
+      }
+    ]
+  }
+}
