@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+clear
+echo "RAINBOW_STATUS v0  |  $(date)"
+echo "============================================================"
+echo
+echo "[1] SERVICES"
+docker compose ps
+echo
+echo "[2] QUICK HEALTH"
+for p in 8786 8787 8788; do
+  if curl -fsS "http://localhost:${p}/docs" >/dev/null 2>&1; then
+    echo "port ${p}: docs OK"
+  else
+    echo "port ${p}: docs FAIL"
+  fi
+done
+echo
+echo "[3] LAST 40 LINES (BROKER)"
+docker compose logs --tail 40 broker || true
+echo
