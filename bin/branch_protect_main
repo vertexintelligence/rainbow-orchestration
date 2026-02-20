@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+OWNER="vertexintelligence"
+REPO="rainbow-orchestration"
+BRANCH="main"
+CTX="lint"
+
+echo "== BRANCH PROTECTION APPLY =="
+echo "repo: ${OWNER}/${REPO}"
+echo "branch: ${BRANCH}"
+echo "required check: ${CTX}"
+echo
+
+gh api \
+  -X PUT \
+  "repos/${OWNER}/${REPO}/branches/${BRANCH}/protection" \
+  -H "Accept: application/vnd.github+json" \
+  --input - <<JSON
+{
+  "required_status_checks": {
+    "strict": true,
+    "contexts": ["${CTX}"]
+  },
+  "enforce_admins": true,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 1
+  },
+  "restrictions": null
+}
+JSON
+
+echo
+echo "== VERIFY PROTECTION =="
+OUT="$(gh api "repos/${OWNER}/${REPO}/branches/${BRANCH}/protection")"
+echo "${OUT}" | head -n 60
+
+echo "${OUT}" | grep -q "\"contexts\"" || { echo "FAIL: contexts missing"; exit 2; }
+echo "${OUT}" | grep -q "\"${CTX}\""   || { echo "FAIL: required context ${CTX} not set"; exit 2; }
+echo "${OUT}" | grep -q "\"enforce_admins\"" || { echo "FAIL: enforce_admins missing"; exit 2; }
+echo "${OUT}" | grep -q "\"required_approving_review_count\"" || { echo "FAIL: required_approving_review_count missing"; exit 2; }
+
+echo
+echo "OK: Branch protection applied + verified."

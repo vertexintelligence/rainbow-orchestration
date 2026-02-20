@@ -1,4 +1,4 @@
-.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up down status logs health boot doctor
+.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up down status logs health boot doctor protect-main
 
 all: lint-all
 
@@ -41,3 +41,6 @@ doctor:
 	@echo "=== STATUS ==="; $(MAKE) status
 	@echo "=== LOGS (broker) ==="; docker compose logs --tail 80 broker || true
 	@echo "=== HEALTH ==="; $(MAKE) health
+
+protect-main:
+	./bin/branch_protect_main
