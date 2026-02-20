@@ -1,4 +1,4 @@
-.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up status logs health boot doctor
+.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up down status logs health boot doctor
 
 all: lint-all
 
@@ -18,6 +18,9 @@ lint-sandbox:
 
 up:
 	docker compose up -d --force-recreate
+
+down:
+	docker compose down
 
 status:
 	docker compose ps
