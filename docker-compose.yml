@@ -1,0 +1,59 @@
+services:
+  firewall:
+    build: ./genx_kernel/firewall
+    ports:
+      - "8786:8786"
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8786/docs').read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  policy:
+    build: ./genx_kernel/policy
+    ports:
+      - "8788:8788"
+    env_file:
+      - .env
+      - ./secrets/broker.env
+
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8788/docs').read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  sandbox:
+    build: ./genx_kernel/sandbox
+    environment:
+      - SANDBOX_NET=off
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+  broker:
+    build: ./genx_kernel/broker
+    ports:
+      - "8787:8787"
+    env_file:
+      - .env
+      - ./secrets/broker.env
+    volumes:
+      - ./data/audit:/data/audit
+    depends_on:
+      - firewall
+      - policy
+      - sandbox
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8787/docs').read()"]
+      interval: 10s
+      timeout: 3s
+      retries: 10

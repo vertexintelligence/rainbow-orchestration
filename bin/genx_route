@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ACTOR="${ACTOR:-rainbow}"
+KEY_ID="${KEY_ID:-k1}"
+SECRET="${SECRET:-}"
+
+if [[ -z "${SECRET}" ]]; then
+  echo "Set SECRET env var (your HMAC key secret)."
+  exit 1
+fi
+
+BROKER_URL="${BROKER_URL:-http://localhost:8787/v1/route}"
+
+INTENT="${1:-}"
+if [[ -z "${INTENT}" ]]; then
+  echo "Usage: genx_route <intent> '<json-payload>'"
+  echo "Example: genx_route run_code '{\"language\":\"python\",\"code\":\"print(2+2)\"}'"
+  exit 1
+fi
+
+PAYLOAD_JSON="${2:-{}}"
+TS="$(date +%s)"
+NONCE="$(python3 - <<'PY'
+import uuid; print(uuid.uuid4())
+PY
+)"
+
+BODY="$(python3 - <<PY
+import json,sys
+intent=sys.argv[1]
+payload=json.loads(sys.argv[2])
+print(json.dumps({"actor":"$ACTOR","intent":intent,"payload":payload}, separators=(",",":")))
+PY
+"$INTENT" "$PAYLOAD_JSON")"
+
+BODY_HASH="$(python3 - <<PY
+import hashlib,sys
+print(hashlib.sha256(sys.argv[1].encode()).hexdigest())
+PY
+"$BODY")"
+
+PATH_ONLY="/v1/route"
+CANONICAL="${TS}\n${NONCE}\nPOST\n${PATH_ONLY}\n${BODY_HASH}"
+
+SIG="$(python3 - <<PY
+import base64,hmac,hashlib,sys
+secret=sys.argv[1].encode()
+msg=sys.argv[2].encode()
+mac=hmac.new(secret,msg,hashlib.sha256).digest()
+print(base64.b64encode(mac).decode())
+PY
+"$SECRET" "$CANONICAL")"
+
+curl -sS -X POST "$BROKER_URL" \
+  -H 'content-type: application/json' \
+  -H "X-GenX-Actor: $ACTOR" \
+  -H "X-GenX-KeyId: $KEY_ID" \
+  -H "X-GenX-Ts: $TS" \
+  -H "X-GenX-Nonce: $NONCE" \
+  -H "X-GenX-Sig: $SIG" \
+  -d "$BODY" | python3 -m json.tool
