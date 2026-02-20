@@ -409,14 +409,10 @@ async def v1_chat(obj: ChatRequest, request: Request):
     # Build history: stored + incoming
     hist = _chat_store_get(thread_id)
 
-# Ensure guardrails are always first
-hist = [ _system_guardrails() ] + [m for m in hist if m.get("role") != "system"]
+    # Ensure guardrails are always first (single system message)
+    hist = [_system_guardrails()] + [m for m in hist if m.get("role") != "system"]
 
-for m in obj.payload.messages:
-    hist.append({"role": m.role, "content": m.content})
-
-
-    # Append incoming messages (as dicts) to history
+    # Append incoming messages (exactly once)
     for m in obj.payload.messages:
         hist.append({"role": m.role, "content": m.content})
 
@@ -434,7 +430,15 @@ for m in obj.payload.messages:
 
     elapsed_ms = int((time.time() - started) * 1000)
 
-    _audit_write
+    _audit_write({
+        "ts": _now_iso(),
+        "request_id": req_id,
+        "stage": "chat",
+        "actor": actor,
+        "thread_id": thread_id,
+        "model": obj.payload.model,
+        "elapsed_ms": elapsed_ms,
+    })
     return {
           "ok": True,
           "request_id": req_id,
