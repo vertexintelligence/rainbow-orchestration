@@ -32,6 +32,7 @@ health:
 	@curl -fsS http://localhost:8787/docs >/dev/null && echo "broker docs ok" || echo "broker docs FAIL"
 	@curl -fsS http://localhost:8786/docs >/dev/null && echo "firewall docs ok" || echo "firewall docs FAIL"
 	@curl -fsS http://localhost:8788/docs >/dev/null && echo "policy docs ok" || echo "policy docs FAIL"
+	@curl -fsS http://localhost:8789/docs >/dev/null && echo "sandbox docs ok" || echo "sandbox docs FAIL"
 
 boot: lint-all up status logs health
 
