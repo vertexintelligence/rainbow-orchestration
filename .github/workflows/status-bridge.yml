@@ -1,0 +1,38 @@
+name: Status Bridge
+
+on:
+  workflow_run:
+    workflows: ["lint"]
+    types: [completed]
+
+permissions:
+  statuses: write
+
+jobs:
+  publish-status:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion != '' }}
+    steps:
+      - name: Publish commit status context lint/lint-all
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.workflow_run.head_sha;
+            const conclusion = context.payload.workflow_run.conclusion; // success, failure, cancelled, etc.
+
+            const state =
+              conclusion === "success" ? "success" :
+              conclusion === "cancelled" ? "error" :
+              "failure";
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              state,
+              context: "lint/lint-all",
+              description: `Bridge status from lint: ${conclusion}`,
+              target_url: context.payload.workflow_run.html_url
+            });
+
+            core.info(`Published status lint/lint-all=${state} for ${sha}`);
