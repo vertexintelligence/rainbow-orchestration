@@ -1,4 +1,4 @@
-.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up down status logs health boot doctor
+.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up down status logs health boot doctor protect-main
 
 all: lint-all
 
@@ -28,6 +28,20 @@ status:
 logs:
 	docker compose logs --tail 120
 
+
+wait-health:
+	@echo "[WAIT] letting services finish boot (10s max)"
+	@for i in 1 2 3 4 5 6 7 8 9 10; do \
+		if curl -fsS http://localhost:8786/docs >/dev/null 2>&1 \
+		&& curl -fsS http://localhost:8788/docs >/dev/null 2>&1 \
+		&& curl -fsS http://localhost:8789/docs >/dev/null 2>&1; then \
+			echo "OK: docs ready"; \
+			break; \
+		fi; \
+		echo "waiting... ($$i/10)"; \
+		sleep 1; \
+	done
+
 health:
 	@curl -fsS http://localhost:8787/docs >/dev/null && echo "broker docs ok" || echo "broker docs FAIL"
 	@curl -fsS http://localhost:8786/docs >/dev/null && echo "firewall docs ok" || echo "firewall docs FAIL"
@@ -40,4 +54,8 @@ doctor:
 	@echo "=== LINT ==="; $(MAKE) lint-all
 	@echo "=== STATUS ==="; $(MAKE) status
 	@echo "=== LOGS (broker) ==="; docker compose logs --tail 80 broker || true
+	@echo "=== WAIT ==="; $(MAKE) wait-health
 	@echo "=== HEALTH ==="; $(MAKE) health
+
+protect-main:
+	./bin/branch_protect_main

@@ -19,7 +19,6 @@ services:
     env_file:
       - .env
       - ./secrets/broker.env
-
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8788/docs').read()"]
@@ -29,6 +28,8 @@ services:
 
   sandbox:
     build: ./genx_kernel/sandbox
+    ports:
+      - "8789:8789"
     environment:
       - SANDBOX_NET=off
     read_only: true
