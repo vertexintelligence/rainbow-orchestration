@@ -3,7 +3,7 @@
 ## What is protected
 - Repository: vertexintelligence/rainbow-orchestration
 - Branch: main
-- Required status check: lint
+- Required status check: lint/lint-all
 - Require branch to be up to date before merge (strict: true)
 - Require at least 1 approving review
 - Enforce branch protection for admins (enforce_admins: true)
