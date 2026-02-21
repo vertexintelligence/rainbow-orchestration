@@ -1,155 +1,1698 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://vertexintelligence.github.io/rainbow-orchestration/schemas/daily_log.schema.json",
-  "title": "Daily Log (NANUS) Schema v1",
+  "title": "DUNBAR_OS Daily Log Event Schema",
+  "description": "Canonical, strict schema for daily log events with defensive validation and publish-safety guards.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "id", "project", "source", "log_date", "captured_at", "raw", "signals"],
+  "required": [
+    "schema_name",
+    "schema_version",
+    "status",
+    "id_contract",
+    "source_contract",
+    "project",
+    "log",
+    "narrative",
+    "truth_planes",
+    "work_items",
+    "quality",
+    "risk_register",
+    "compliance",
+    "financial_flags",
+    "communications",
+    "attachments",
+    "dispatch",
+    "audit"
+  ],
+  "$defs": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "phone": {
+      "type": "string",
+      "minLength": 7
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidenceRefs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
   "properties": {
+    "schema_name": {
+      "type": "string",
+      "const": "DUNBAR_OS::DAILY_LOG_EVENT"
+    },
     "schema_version": {
       "type": "string",
-      "const": "daily_log.v1",
-      "description": "Schema version identifier for validation and migration."
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "default": "1.0.0"
     },
-
-    "id": {
+    "status": {
       "type": "string",
-      "minLength": 6,
-      "description": "Unique log id (recommended: DL-YYYYMMDD-HHMM-<project>)"
+      "enum": [
+        "CANON_LOCKED"
+      ]
     },
-
-    "project": {
+    "id_contract": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "code"],
+      "required": [
+        "event_id",
+        "examples"
+      ],
       "properties": {
-        "name": { "type": "string", "minLength": 1 },
-        "code": { "type": "string", "minLength": 1, "description": "Canonical short code, e.g., Barnhart" }
-      }
-    },
-
-    "source": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": ["system"],
-      "properties": {
-        "system": {
+        "event_id": {
           "type": "string",
-          "enum": ["buildertrend", "manual", "email", "sms", "other"]
+          "pattern": "^DL-[A-Z0-9]+-[0-9]{8}-[0-9]{3}$"
         },
-        "system_ref": {
-          "type": "string",
-          "description": "Upstream identifier (Buildertrend daily log id, email id, etc.)"
-        },
-        "ingest_trace_id": {
-          "type": "string",
-          "description": "Trace id for pipeline correlation"
+        "examples": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^DL-[A-Z0-9]+-[0-9]{8}-[0-9]{3}$"
+          }
         }
       }
     },
-
-    "log_date": {
-      "type": "string",
-      "format": "date",
-      "description": "The day the work occurred (local jobsite date)."
-    },
-
-    "captured_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "When this record was captured/ingested by the system."
-    },
-
-    "author": {
+    "source_contract": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "source_type",
+        "source_ref",
+        "captured_at_local",
+        "captured_by",
+        "captured_by_name"
+      ],
       "properties": {
-        "name": { "type": "string" },
-        "role": { "type": "string" },
-        "email": { "type": "string", "format": "email" }
+        "source_type": {
+          "type": "string",
+          "enum": [
+            "chat",
+            "buildertrend",
+            "email",
+            "sms",
+            "voice",
+            "image"
+          ]
+        },
+        "source_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "thread_name",
+            "message_id",
+            "buildertrend_url",
+            "file_refs"
+          ],
+          "properties": {
+            "thread_name": {
+              "type": "string"
+            },
+            "message_id": {
+              "type": "string"
+            },
+            "buildertrend_url": {
+              "type": "string",
+              "format": "uri-reference"
+            },
+            "file_refs": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "captured_at_local": {
+          "$ref": "#/$defs/dateTime"
+        },
+        "captured_by": {
+          "type": "string",
+          "enum": [
+            "human",
+            "agent"
+          ]
+        },
+        "captured_by_name": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
       }
     },
-
-    "raw": {
+    "project": {
       "type": "object",
       "additionalProperties": false,
-      "description": "Raw upstream payload or a pointer to it.",
+      "required": [
+        "project_id",
+        "project_code",
+        "project_name",
+        "job_status",
+        "site_address",
+        "client_display_name",
+        "internal_team",
+        "sub_vendor_context"
+      ],
       "properties": {
-        "drive_path": { "type": "string", "description": "Pointer to RAW file stored in Drive." },
-        "payload": { "type": "object", "additionalProperties": true, "description": "Optional embedded raw payload." }
-      },
-      "anyOf": [
-        { "required": ["drive_path"] },
-        { "required": ["payload"] }
-      ]
-    },
-
-    "parsed": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Optional normalized fields extracted from raw.",
-      "properties": {
-        "weather": { "type": "string" },
-        "crew": {
+        "project_id": {
+          "type": "string"
+        },
+        "project_code": {
+          "type": "string"
+        },
+        "project_name": {
+          "type": "string"
+        },
+        "job_status": {
+          "type": "string",
+          "enum": [
+            "presale",
+            "open",
+            "warranty",
+            "closed"
+          ]
+        },
+        "site_address": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "line1",
+            "city",
+            "state",
+            "zip"
+          ],
+          "properties": {
+            "line1": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "zip": {
+              "type": "string"
+            }
+          }
+        },
+        "client_display_name": {
+          "type": "string"
+        },
+        "internal_team": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["name"],
+            "required": [
+              "person_id",
+              "name",
+              "role_title",
+              "contact"
+            ],
             "properties": {
-              "name": { "type": "string" },
-              "company": { "type": "string" },
-              "count": { "type": "integer", "minimum": 0 }
+              "person_id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "role_title": {
+                "type": "string"
+              },
+              "contact": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "email",
+                  "phone"
+                ],
+                "properties": {
+                  "email": {
+                    "$ref": "#/$defs/email"
+                  },
+                  "phone": {
+                    "$ref": "#/$defs/phone"
+                  }
+                }
+              }
             }
           }
         },
-        "notes": { "type": "string" },
+        "sub_vendor_context": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "company_name",
+              "primary_contact_name",
+              "trade_mtif",
+              "role_title",
+              "portal_name",
+              "email",
+              "phone"
+            ],
+            "properties": {
+              "company_name": {
+                "type": "string"
+              },
+              "primary_contact_name": {
+                "type": "string"
+              },
+              "trade_mtif": {
+                "type": "string"
+              },
+              "role_title": {
+                "type": "string"
+              },
+              "portal_name": {
+                "type": "string"
+              },
+              "email": {
+                "$ref": "#/$defs/email"
+              },
+              "phone": {
+                "$ref": "#/$defs/phone"
+              }
+            }
+          }
+        }
+      }
+    },
+    "log": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "log_date_local",
+        "log_time_local",
+        "timezone",
+        "title",
+        "phase",
+        "trade",
+        "signal_tags",
+        "visibility"
+      ],
+      "properties": {
+        "log_date_local": {
+          "$ref": "#/$defs/date"
+        },
+        "log_time_local": {
+          "type": "string",
+          "pattern": "^(?:[01]\\d|2[0-3]):[0-5]\\d$"
+        },
+        "timezone": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "format_law",
+            "title_text",
+            "char_count",
+            "is_compliant"
+          ],
+          "properties": {
+            "format_law": {
+              "type": "string"
+            },
+            "title_text": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "char_count": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 50
+            },
+            "is_compliant": {
+              "type": "boolean"
+            }
+          }
+        },
+        "phase": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "phase_id",
+            "phase_color",
+            "authority_note"
+          ],
+          "properties": {
+            "phase_id": {
+              "type": "string",
+              "enum": [
+                "01_PRE-CONSTRUCTION",
+                "02_DEMOLITION",
+                "03_SITE_FOUNDATION",
+                "04_STRUCTURE",
+                "05_SYSTEMS_MEP",
+                "06_FINISHES",
+                "07_CLOSEOUT"
+              ]
+            },
+            "phase_color": {
+              "type": "string",
+              "enum": [
+                "Blue",
+                "Red",
+                "Gold",
+                "Charcoal",
+                "Green",
+                "Orange",
+                "Silver"
+              ]
+            },
+            "authority_note": {
+              "type": "string"
+            }
+          }
+        },
+        "trade": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "trade_mtif",
+            "trade_label",
+            "area_zone"
+          ],
+          "properties": {
+            "trade_mtif": {
+              "type": "string"
+            },
+            "trade_label": {
+              "type": "string"
+            },
+            "area_zone": {
+              "type": "string"
+            }
+          }
+        },
+        "signal_tags": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "exact_3_required",
+            "tags"
+          ],
+          "properties": {
+            "exact_3_required": {
+              "type": "boolean"
+            },
+            "tags": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 3,
+              "maxItems": 3
+            }
+          }
+        },
+        "visibility": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "client_visible_sections",
+            "internal_only_sections"
+          ],
+          "properties": {
+            "client_visible_sections": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "internal_only_sections": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "narrative": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "client_notes",
+        "execution_notes"
+      ],
+      "properties": {
+        "client_notes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title",
+            "text"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        },
+        "execution_notes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "title",
+            "standard",
+            "now",
+            "block",
+            "next",
+            "contacts"
+          ],
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "standard": {
+              "type": "string"
+            },
+            "now": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "block": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "next": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "contacts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "truth_planes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "law",
+        "plane_1_observed",
+        "plane_2_verified",
+        "plane_3_inferred"
+      ],
+      "properties": {
+        "law": {
+          "type": "string",
+          "const": "Three-Plane Truth Law"
+        },
+        "plane_1_observed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "description",
+            "evidence_refs"
+          ],
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "evidence_refs": {
+              "$ref": "#/$defs/evidenceRefs"
+            }
+          }
+        },
+        "plane_2_verified": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "description",
+            "verification_method",
+            "verified_by",
+            "evidence_refs"
+          ],
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "verification_method": {
+              "type": "string"
+            },
+            "verified_by": {
+              "type": "string"
+            },
+            "evidence_refs": {
+              "$ref": "#/$defs/evidenceRefs"
+            }
+          }
+        },
+        "plane_3_inferred": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "description",
+            "assumptions",
+            "risk_if_wrong"
+          ],
+          "properties": {
+            "description": {
+              "type": "string"
+            },
+            "assumptions": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "risk_if_wrong": {
+              "type": "string",
+              "enum": [
+                "low",
+                "medium",
+                "high"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "work_items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tasks",
+        "schedule_signals",
+        "rfis",
+        "deliveries"
+      ],
+      "properties": {
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "task_id_external",
+              "system",
+              "task_title",
+              "description",
+              "phase_id",
+              "trade_mtif",
+              "owner",
+              "start_date",
+              "due_date",
+              "status",
+              "evidence_required",
+              "schedule_link",
+              "dependencies",
+              "tags"
+            ],
+            "properties": {
+              "task_id_external": {
+                "type": "string"
+              },
+              "system": {
+                "type": "string",
+                "enum": [
+                  "buildertrend",
+                  "other"
+                ]
+              },
+              "task_title": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "phase_id": {
+                "type": "string"
+              },
+              "trade_mtif": {
+                "type": "string"
+              },
+              "owner": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type",
+                  "name",
+                  "company"
+                ],
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "internal",
+                      "sub_vendor"
+                    ]
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "company": {
+                    "type": "string"
+                  }
+                }
+              },
+              "start_date": {
+                "$ref": "#/$defs/date"
+              },
+              "due_date": {
+                "$ref": "#/$defs/date"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "sent",
+                  "accepted",
+                  "in_progress",
+                  "blocked",
+                  "complete"
+                ]
+              },
+              "evidence_required": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "photos_before",
+                    "photos_during",
+                    "photos_after",
+                    "docs"
+                  ]
+                }
+              },
+              "schedule_link": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "is_linked",
+                  "schedule_item_id",
+                  "schedule_item_title",
+                  "planned_window"
+                ],
+                "properties": {
+                  "is_linked": {
+                    "type": "boolean"
+                  },
+                  "schedule_item_id": {
+                    "type": "string"
+                  },
+                  "schedule_item_title": {
+                    "type": "string"
+                  },
+                  "planned_window": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "start",
+                      "end"
+                    ],
+                    "properties": {
+                      "start": {
+                        "type": "string"
+                      },
+                      "end": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "dependencies": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "tags": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "minItems": 3,
+                "maxItems": 3
+              }
+            }
+          }
+        },
+        "schedule_signals": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "signal_type",
+              "schedule_item_title",
+              "phase_id",
+              "trade_mtif",
+              "recommended_window",
+              "reason",
+              "confidence"
+            ],
+            "properties": {
+              "signal_type": {
+                "type": "string",
+                "enum": [
+                  "create",
+                  "update",
+                  "link_task",
+                  "resequence",
+                  "hold",
+                  "inspect"
+                ]
+              },
+              "schedule_item_title": {
+                "type": "string"
+              },
+              "phase_id": {
+                "type": "string"
+              },
+              "trade_mtif": {
+                "type": "string"
+              },
+              "recommended_window": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "start",
+                  "end"
+                ],
+                "properties": {
+                  "start": {
+                    "$ref": "#/$defs/date"
+                  },
+                  "end": {
+                    "$ref": "#/$defs/date"
+                  }
+                }
+              },
+              "reason": {
+                "type": "string"
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "rfis": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "rfi_id_external",
+              "question",
+              "needed_by",
+              "assigned_to",
+              "status",
+              "attachments"
+            ],
+            "properties": {
+              "rfi_id_external": {
+                "type": "string"
+              },
+              "question": {
+                "type": "string"
+              },
+              "needed_by": {
+                "$ref": "#/$defs/date"
+              },
+              "assigned_to": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "sent",
+                  "answered",
+                  "closed"
+                ]
+              },
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "deliveries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item_name",
+              "manufacturer",
+              "model",
+              "dimensions",
+              "finish_color",
+              "qty",
+              "unit",
+              "location_on_site",
+              "delivery_date_target",
+              "photo_refs",
+              "doc_refs"
+            ],
+            "properties": {
+              "item_name": {
+                "type": "string"
+              },
+              "manufacturer": {
+                "type": "string"
+              },
+              "model": {
+                "type": "string"
+              },
+              "dimensions": {
+                "type": "string"
+              },
+              "finish_color": {
+                "type": "string"
+              },
+              "qty": {
+                "type": "number",
+                "minimum": 0
+              },
+              "unit": {
+                "type": "string"
+              },
+              "location_on_site": {
+                "type": "string"
+              },
+              "delivery_date_target": {
+                "$ref": "#/$defs/date"
+              },
+              "photo_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "doc_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "quality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "quality_standard",
+        "checklist",
+        "photos_required"
+      ],
+      "properties": {
+        "quality_standard": {
+          "type": "string"
+        },
+        "checklist": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "item",
+              "status",
+              "notes"
+            ],
+            "properties": {
+              "item": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "na",
+                  "pass",
+                  "fail",
+                  "needs_review"
+                ]
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "photos_required": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "before",
+            "during",
+            "after",
+            "count_minimum",
+            "elevation_coverage_required"
+          ],
+          "properties": {
+            "before": {
+              "type": "boolean"
+            },
+            "during": {
+              "type": "boolean"
+            },
+            "after": {
+              "type": "boolean"
+            },
+            "count_minimum": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "elevation_coverage_required": {
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "risk_register": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "risk_id",
+          "category",
+          "description",
+          "impact_level",
+          "urgency",
+          "mitigation",
+          "owner",
+          "due_date",
+          "status",
+          "evidence_refs"
+        ],
+        "properties": {
+          "risk_id": {
+            "type": "string",
+            "pattern": "^RISK-[0-9]{3}$"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "safety",
+              "schedule",
+              "quality",
+              "scope",
+              "weather",
+              "vendor",
+              "inspection",
+              "financial"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "impact_level": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high",
+              "critical"
+            ]
+          },
+          "urgency": {
+            "type": "string",
+            "enum": [
+              "low",
+              "medium",
+              "high"
+            ]
+          },
+          "mitigation": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "due_date": {
+            "$ref": "#/$defs/date"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "open",
+              "watch",
+              "mitigated",
+              "closed"
+            ]
+          },
+          "evidence_refs": {
+            "$ref": "#/$defs/evidenceRefs"
+          }
+        }
+      }
+    },
+    "compliance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sub_vendor_documents",
+        "permits_inspections"
+      ],
+      "properties": {
+        "sub_vendor_documents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "doc_type",
+              "required",
+              "received",
+              "expires_on",
+              "file_refs"
+            ],
+            "properties": {
+              "doc_type": {
+                "type": "string",
+                "enum": [
+                  "GeneralLiability",
+                  "WorkersComp",
+                  "W9",
+                  "SubcontractorAgreement",
+                  "LienWaiver"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "received": {
+                "type": "boolean"
+              },
+              "expires_on": {
+                "$ref": "#/$defs/date"
+              },
+              "file_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "permits_inspections": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "type",
+              "jurisdiction",
+              "scheduled_on",
+              "result",
+              "notes"
+            ],
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "jurisdiction": {
+                "type": "string"
+              },
+              "scheduled_on": {
+                "$ref": "#/$defs/date"
+              },
+              "result": {
+                "type": "string",
+                "enum": [
+                  "pending",
+                  "pass",
+                  "fail"
+                ]
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "financial_flags": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "is_financial_data_present",
+        "cost_impact",
+        "po_required",
+        "bill_expected",
+        "cost_code_recommendations"
+      ],
+      "properties": {
+        "is_financial_data_present": {
+          "type": "boolean"
+        },
+        "cost_impact": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "status",
+            "range_low",
+            "range_high",
+            "notes"
+          ],
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "unknown",
+                "none",
+                "potential",
+                "confirmed"
+              ]
+            },
+            "range_low": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "range_high": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "notes": {
+              "type": "string"
+            }
+          }
+        },
+        "po_required": {
+          "type": "boolean"
+        },
+        "bill_expected": {
+          "type": "boolean"
+        },
+        "cost_code_recommendations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "phase_id",
+              "cost_code",
+              "reason"
+            ],
+            "properties": {
+              "phase_id": {
+                "type": "string"
+              },
+              "cost_code": {
+                "type": "string"
+              },
+              "reason": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "communications": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "outbound_messages",
+        "inbound_messages"
+      ],
+      "properties": {
+        "outbound_messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "channel",
+              "recipient",
+              "subject",
+              "body",
+              "send_rule",
+              "status",
+              "thread_refs"
+            ],
+            "properties": {
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "email",
+                  "sms",
+                  "buildertrend_message"
+                ]
+              },
+              "recipient": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "name",
+                  "email",
+                  "phone",
+                  "company"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "$ref": "#/$defs/email"
+                  },
+                  "phone": {
+                    "$ref": "#/$defs/phone"
+                  },
+                  "company": {
+                    "type": "string"
+                  }
+                }
+              },
+              "subject": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              },
+              "send_rule": {
+                "type": "string",
+                "enum": [
+                  "immediate",
+                  "+24h_if_accepted",
+                  "+48h_if_accepted",
+                  "manual"
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "draft",
+                  "queued",
+                  "sent"
+                ]
+              },
+              "thread_refs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "inbound_messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "channel",
+              "from",
+              "received_at",
+              "summary",
+              "attachments"
+            ],
+            "properties": {
+              "channel": {
+                "type": "string",
+                "enum": [
+                  "email",
+                  "sms",
+                  "buildertrend_message"
+                ]
+              },
+              "from": {
+                "type": "string"
+              },
+              "received_at": {
+                "$ref": "#/$defs/dateTime"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "attachments": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "attachments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "photos",
+        "files"
+      ],
+      "properties": {
         "photos": {
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["uri"],
+            "required": [
+              "ref",
+              "caption",
+              "captured_at",
+              "location",
+              "category"
+            ],
             "properties": {
-              "uri": { "type": "string" },
-              "caption": { "type": "string" }
+              "ref": {
+                "type": "string"
+              },
+              "caption": {
+                "type": "string"
+              },
+              "captured_at": {
+                "$ref": "#/$defs/dateTime"
+              },
+              "location": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string",
+                "enum": [
+                  "before",
+                  "during",
+                  "after",
+                  "issue",
+                  "reference"
+                ]
+              }
+            }
+          }
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "ref",
+              "filename",
+              "type",
+              "notes"
+            ],
+            "properties": {
+              "ref": {
+                "type": "string"
+              },
+              "filename": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "pdf",
+                  "image",
+                  "doc",
+                  "xls",
+                  "other"
+                ]
+              },
+              "notes": {
+                "type": "string"
+              }
             }
           }
         }
       }
     },
-
-    "signals": {
-      "type": "array",
-      "minItems": 0,
-      "items": {
-        "type": "object",
-        "additionalProperties": false,
-        "required": ["signal_id", "type", "priority", "title", "created_at"],
-        "properties": {
-          "signal_id": { "type": "string", "minLength": 8, "description": "SIG-YYYYMMDD-HHMM-<project>-<type>" },
-          "type": {
-            "type": "string",
-            "enum": ["task", "blocker", "risk", "decision", "procurement", "inspection", "update", "issue", "change_order"]
-          },
-          "priority": { "type": "string", "enum": ["P0", "P1", "P2", "P3"] },
-          "title": { "type": "string", "minLength": 1 },
-          "details": { "type": "string" },
-          "owner": { "type": "string" },
-          "due_date": { "type": "string", "format": "date" },
-          "links": { "type": "array", "items": { "type": "string" } },
-          "created_at": { "type": "string", "format": "date-time" }
+    "dispatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requires_human_confirm",
+        "ready_to_publish",
+        "publish_targets",
+        "next_actions"
+      ],
+      "properties": {
+        "requires_human_confirm": {
+          "type": "boolean"
+        },
+        "ready_to_publish": {
+          "type": "boolean"
+        },
+        "publish_targets": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "buildertrend_daily_log",
+            "buildertrend_tasks",
+            "buildertrend_schedule",
+            "client_update"
+          ],
+          "properties": {
+            "buildertrend_daily_log": {
+              "type": "boolean"
+            },
+            "buildertrend_tasks": {
+              "type": "boolean"
+            },
+            "buildertrend_schedule": {
+              "type": "boolean"
+            },
+            "client_update": {
+              "type": "boolean"
+            }
+          }
+        },
+        "next_actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "action",
+              "owner",
+              "due_date",
+              "priority"
+            ],
+            "properties": {
+              "action": {
+                "type": "string"
+              },
+              "owner": {
+                "type": "string"
+              },
+              "due_date": {
+                "$ref": "#/$defs/date"
+              },
+              "priority": {
+                "type": "string",
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ]
+              }
+            }
+          }
         }
       }
     },
-
-    "security": {
+    "audit": {
       "type": "object",
       "additionalProperties": false,
+      "required": [
+        "created_at",
+        "updated_at",
+        "version_history"
+      ],
       "properties": {
-        "redactions_applied": { "type": "boolean" },
-        "sensitivity": { "type": "string", "enum": ["low", "internal", "confidential"] }
+        "created_at": {
+          "$ref": "#/$defs/dateTime"
+        },
+        "updated_at": {
+          "$ref": "#/$defs/dateTime"
+        },
+        "version_history": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "version",
+              "changed_by",
+              "changed_at",
+              "notes"
+            ],
+            "properties": {
+              "version": {
+                "type": "string",
+                "pattern": "^\\d+\\.\\d+\\.\\d+$"
+              },
+              "changed_by": {
+                "type": "string"
+              },
+              "changed_at": {
+                "$ref": "#/$defs/dateTime"
+              },
+              "notes": {
+                "type": "string"
+              }
+            }
+          }
+        }
       }
     }
-  }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "financial_flags": {
+            "properties": {
+              "is_financial_data_present": {
+                "const": false
+              }
+            },
+            "required": [
+              "is_financial_data_present"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "financial_flags": {
+            "properties": {
+              "cost_impact": {
+                "properties": {
+                  "range_low": {
+                    "type": "null"
+                  },
+                  "range_high": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "dispatch": {
+            "properties": {
+              "ready_to_publish": {
+                "const": true
+              }
+            },
+            "required": [
+              "ready_to_publish"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "dispatch": {
+            "properties": {
+              "requires_human_confirm": {
+                "const": true
+              },
+              "publish_targets": {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "buildertrend_daily_log": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "buildertrend_daily_log"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "buildertrend_tasks": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "buildertrend_tasks"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "buildertrend_schedule": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "buildertrend_schedule"
+                    ]
+                  },
+                  {
+                    "properties": {
+                      "client_update": {
+                        "const": true
+                      }
+                    },
+                    "required": [
+                      "client_update"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

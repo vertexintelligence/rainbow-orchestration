@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Validate a daily log event JSON file against SCHEMAS/daily_log.schema.json."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+SCHEMA_PATH = REPO_ROOT / "SCHEMAS" / "daily_log.schema.json"
+
+
+def _read_json(path: Path):
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("Usage: ./bin/validate_daily_log <path-to-json>", file=sys.stderr)
+        return 2
+
+    try:
+        from jsonschema import Draft202012Validator
+    except ModuleNotFoundError:
+        print(
+            "Validation failed: missing dependency 'jsonschema'. Install with: pip install -r requirements-dev.txt",
+            file=sys.stderr,
+        )
+        return 2
+
+    payload_path = Path(sys.argv[1]).resolve()
+
+    try:
+        schema = _read_json(SCHEMA_PATH)
+        payload = _read_json(payload_path)
+    except FileNotFoundError as exc:
+        print(f"Validation failed: file not found: {exc}", file=sys.stderr)
+        return 2
+    except json.JSONDecodeError as exc:
+        print(
+            f"Validation failed: invalid JSON at line {exc.lineno}, column {exc.colno}",
+            file=sys.stderr,
+        )
+        return 2
+
+    validator = Draft202012Validator(schema)
+    errors = sorted(validator.iter_errors(payload), key=lambda e: list(e.path))
+
+    if errors:
+        print(f"INVALID: {payload_path}")
+        for idx, err in enumerate(errors, start=1):
+            path = "/".join(str(p) for p in err.path) or "<root>"
+            rule = "/".join(str(p) for p in err.schema_path)
+            print(f"{idx}. path={path} | rule={rule} | message={err.message}")
+        return 1
+
+    print(f"VALID: {payload_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,4 +1,4 @@
-.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up down status logs health boot doctor protect-main
+.PHONY: all lint-all lint-broker lint-policy lint-firewall lint-sandbox up down status logs health wait-health boot doctor protect-main test validate-examples
 
 all: lint-all
 
@@ -27,7 +27,6 @@ status:
 
 logs:
 	docker compose logs --tail 120
-
 
 wait-health:
 	@echo "[WAIT] letting services finish boot (10s max)"
@@ -59,3 +58,10 @@ doctor:
 
 protect-main:
 	./bin/branch_protect_main
+
+test:
+	python -m pytest -q
+
+validate-examples:
+	./bin/validate_daily_log EXAMPLES/daily_log_event.min.json
+	./bin/validate_daily_log EXAMPLES/daily_log_event.full.json
