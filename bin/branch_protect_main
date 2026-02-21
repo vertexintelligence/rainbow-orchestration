@@ -4,7 +4,7 @@ set -euo pipefail
 OWNER="vertexintelligence"
 REPO="rainbow-orchestration"
 BRANCH="main"
-CTX="lint"
+CTX="lint/lint-all"
 
 echo "== BRANCH PROTECTION APPLY =="
 echo "repo: ${OWNER}/${REPO}"
