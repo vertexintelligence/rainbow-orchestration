@@ -24,3 +24,9 @@ venv/
 # Python cache
 __pycache__/
 *.py[cod]
+
+# local junk
+python3
+
+# local junk
+python3
