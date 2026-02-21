@@ -1,6 +1,11 @@
 name: CI
 
 on:
+
+permissions:
+  statuses: write
+  contents: read
+
   push:
     branches: [main]
   pull_request:
@@ -42,3 +47,23 @@ jobs:
 
       - name: Validate canonical examples
         run: make validate-examples
+publish-legacy-status:
+    runs-on: ubuntu-latest
+    needs: [lint-all, test-and-validate]
+    if: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - name: Publish commit status context lint-all
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.pull_request.head.sha;
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              state: "success",
+              context: "lint-all",
+              description: "Bridge: CI passed (lint-all)",
+              target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
+            });
+            core.info(`Published commit status lint-all=success for ${sha}`);
