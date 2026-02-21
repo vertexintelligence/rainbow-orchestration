@@ -65,3 +65,12 @@ test:
 validate-examples:
 	./bin/validate_daily_log EXAMPLES/daily_log_event.min.json
 	./bin/validate_daily_log EXAMPLES/daily_log_event.full.json
+
+.PHONY: install-dev doctor-local
+
+install-dev:
+	python3 -m venv .venv
+	. .venv/bin/activate && python -m pip install -U pip && python -m pip install -r requirements-dev.txt
+
+doctor-local:
+	. .venv/bin/activate && $(MAKE) lint-all && $(MAKE) test && $(MAKE) validate-examples
