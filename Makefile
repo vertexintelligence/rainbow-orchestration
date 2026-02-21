@@ -60,7 +60,7 @@ protect-main:
 	./bin/branch_protect_main
 
 test:
-	python -m pytest -q
+	python3 -m pytest -q
 
 validate-examples:
 	./bin/validate_daily_log EXAMPLES/daily_log_event.min.json
