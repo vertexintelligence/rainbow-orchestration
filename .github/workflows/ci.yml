@@ -1,15 +1,14 @@
 name: CI
 
 on:
-
-permissions:
-  statuses: write
-  contents: read
-
   push:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  statuses: write
+  contents: read
 
 jobs:
   lint-all:
@@ -47,23 +46,33 @@ jobs:
 
       - name: Validate canonical examples
         run: make validate-examples
-publish-legacy-status:
+
+  publish-legacy-status:
     runs-on: ubuntu-latest
     needs: [lint-all, test-and-validate]
-    if: ${{ github.event_name == 'pull_request' }}
+    if: ${{ always() && github.event_name == 'pull_request' }}
     steps:
       - name: Publish commit status context lint-all
         uses: actions/github-script@v7
         with:
           script: |
             const sha = context.payload.pull_request.head.sha;
+
+            // success only if BOTH upstream jobs succeeded
+            const ok = (context.payload.workflow_run === undefined) &&
+              ("${{ needs.lint-all.result }}" === "success") &&
+              ("${{ needs.test-and-validate.result }}" === "success");
+
+            const state = ok ? "success" : "failure";
+
             await github.rest.repos.createCommitStatus({
               owner: context.repo.owner,
               repo: context.repo.repo,
               sha,
-              state: "success",
+              state,
               context: "lint-all",
-              description: "Bridge: CI passed (lint-all)",
+              description: `Bridge: CI ${state} (lint-all)`,
               target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`
             });
-            core.info(`Published commit status lint-all=success for ${sha}`);
+
+            core.info(`Published commit status lint-all=${state} for ${sha}`);
