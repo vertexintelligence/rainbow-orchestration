@@ -7,11 +7,21 @@ import time
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
+import logging
+
 import urllib.request
 import urllib.error
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
+
+from .routing.auto_model_policy import (
+    AutoModelInputs,
+    ChatMessage as PolicyChatMessage,
+    ModelCatalog,
+    build_actor_policy,
+    resolve_auto_model,
+)
 
 
 # ============================================================
@@ -46,6 +56,29 @@ try:
     ACTOR_KEYS: Dict[str, str] = json.loads(ACTOR_KEYS_JSON) if ACTOR_KEYS_JSON else {}
 except Exception:
     ACTOR_KEYS = {}
+
+
+logger = logging.getLogger("genx.broker")
+
+DEFAULT_BUCKETS = {
+    "FAST": ["fast_primary", "fast_secondary", "last_known_good_fast"],
+    "REASONING": ["reasoning_primary", "reasoning_secondary", "last_known_good_reasoning"],
+    "SAFE_SMALL": ["safe_primary", "safe_secondary"],
+}
+
+AVAILABLE_LOCAL_MODELS = {
+    m.strip()
+    for m in os.getenv(
+        "AVAILABLE_LOCAL_MODELS",
+        "fast_primary,fast_secondary,last_known_good_fast,reasoning_primary,reasoning_secondary,last_known_good_reasoning,safe_primary,safe_secondary",
+    ).split(",")
+    if m.strip()
+}
+REMOTE_MODELS = {
+    m.strip()
+    for m in os.getenv("REMOTE_MODELS", "").split(",")
+    if m.strip()
+}
 
 
 # ============================================================
@@ -189,12 +222,48 @@ class ChatPayload(BaseModel):
     max_tokens: int = 200
     temperature: float = 0.2
     model: str = "mistral:latest"
+    allow_remote_models: bool = False
 
 
 class ChatRequest(BaseModel):
     actor: str
     intent: str = "chat"
     payload: ChatPayload
+
+
+class ModelDecisionMeta(BaseModel):
+    chosen_model: str
+    reason: str
+    escalation: bool
+
+
+class ChatResponse(BaseModel):
+    ok: bool
+    request_id: str
+    actor: str
+    thread_id: str
+    model: str
+    assistant: Dict[str, str]
+    elapsed_ms: int
+    meta: Optional[ModelDecisionMeta] = None
+
+
+class RouteResponse(BaseModel):
+    ok: bool
+    request_id: str
+    firewall: Dict[str, Any]
+    policy: Optional[Dict[str, Any]] = None
+    sandbox: Optional[Dict[str, Any]] = None
+    elapsed_ms: int
+    meta: Optional[ModelDecisionMeta] = None
+
+
+def _build_model_catalog() -> ModelCatalog:
+    return ModelCatalog(
+        bucket_models=DEFAULT_BUCKETS,
+        available_models=frozenset(AVAILABLE_LOCAL_MODELS | REMOTE_MODELS),
+        remote_models=frozenset(REMOTE_MODELS),
+    )
 
 
 # ============================================================
@@ -300,15 +369,39 @@ def health():
 
 # --- ROUTE HANDLER (canonical) ----------------------------------------------
 
-@app.post("/v1/route")
+@app.post("/v1/route", response_model=RouteResponse)
 async def v1_route(req: RouteRequest, request: Request):
     t0 = time.time()
     request_id = f"req_{uuid.uuid4().hex[:12]}"
 
-    # 0) AUTH / SIGNATURE GATE (already implemented in your code)
-    # (Assumes you already validated headers and signature before reaching here.)
+    allow_remote_models = bool((req.payload or {}).get("allow_remote_models", False))
+    requested_model = str((req.payload or {}).get("model", "auto"))
+    catalog = _build_model_catalog()
+    actor_policy = build_actor_policy(req.actor, allow_remote_models=allow_remote_models)
+    route_messages = [PolicyChatMessage(role="user", content=req.intent)]
+    try:
+        decision_meta = resolve_auto_model(
+            AutoModelInputs(
+            actor=req.actor,
+            endpoint="route",
+            requested_model=requested_model,
+            max_tokens=int((req.payload or {}).get("max_tokens", 200)),
+            temperature=(req.payload or {}).get("temperature"),
+            message_count=1,
+            has_system_prompt=False,
+            risk_score=(req.payload or {}).get("risk_score"),
+            allow_remote_models=allow_remote_models,
+            messages=route_messages,
+            ),
+            catalog=catalog,
+            policy=actor_policy,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail=f"auto_model_selection_failed:{str(e)}")
 
-    # 1) FIREWALL
+    if decision_meta.tools_disabled and isinstance(req.payload, dict) and req.payload.get("tools"):
+        req.payload["tools"] = []
+
     firewall_out = _post_json(FIREWALL_URL, req.model_dump(), timeout_s=8.0)
     if not firewall_out.get("ok", False):
         raise HTTPException(status_code=502, detail="firewall unavailable")
@@ -320,6 +413,7 @@ async def v1_route(req: RouteRequest, request: Request):
             "policy": None,
             "sandbox": None,
             "elapsed_ms": int((time.time() - t0) * 1000),
+            "meta": decision_meta.__dict__,
         }
         _audit_write({
             "ts": _now_iso(),
@@ -331,17 +425,24 @@ async def v1_route(req: RouteRequest, request: Request):
             "policy": None,
             "sandbox": None,
             "elapsed_ms": resp["elapsed_ms"],
+            "model_meta": decision_meta.__dict__,
         })
+        logger.info(
+            "auto_model actor=%s endpoint=route requested_model=%s chosen_model=%s reason=%s escalation=%s",
+            req.actor,
+            requested_model,
+            decision_meta.chosen_model,
+            decision_meta.reason,
+            decision_meta.escalation,
+        )
         return resp
 
-    # 2) POLICY
     policy_out = _post_json(POLICY_URL, req.model_dump(), timeout_s=8.0)
     if not policy_out.get("ok", False):
         raise HTTPException(status_code=502, detail="policy unavailable")
 
     decision = policy_out.get("decision", "deny")
 
-    # 3) SANDBOX (allow-only)
     sandbox_out: Optional[Dict[str, Any]] = None
     if decision == "allow" and req.intent in {"run_code", "sandbox_run"}:
         payload = req.payload or {}
@@ -365,6 +466,7 @@ async def v1_route(req: RouteRequest, request: Request):
         "policy": policy_out,
         "sandbox": sandbox_out,
         "elapsed_ms": int((time.time() - t0) * 1000),
+        "meta": decision_meta.__dict__,
     }
 
     _audit_write({
@@ -378,7 +480,16 @@ async def v1_route(req: RouteRequest, request: Request):
         "payload": (req.payload if isinstance(req.payload, dict) else None),
         "sandbox": sandbox_out,
         "elapsed_ms": resp["elapsed_ms"],
+        "model_meta": decision_meta.__dict__,
     })
+    logger.info(
+        "auto_model actor=%s endpoint=route requested_model=%s chosen_model=%s reason=%s escalation=%s",
+        req.actor,
+        requested_model,
+        decision_meta.chosen_model,
+        decision_meta.reason,
+        decision_meta.escalation,
+    )
 
     return resp
 
@@ -392,12 +503,11 @@ def _system_guardrails() -> Dict[str, str]:
             "No links. No suggestions. No extra words."
         )
     }
-
 # ============================================================
 # /v1/chat  (secure local chat → Ollama)
 # ============================================================
 
-@app.post("/v1/chat")
+@app.post("/v1/chat", response_model=ChatResponse)
 async def v1_chat(obj: ChatRequest, request: Request):
     started = time.time()
     req_id = f"req_{uuid.uuid4().hex[:12]}"
@@ -416,10 +526,33 @@ async def v1_chat(obj: ChatRequest, request: Request):
     for m in obj.payload.messages:
         hist.append({"role": m.role, "content": m.content})
 
+    allow_remote_models = bool(getattr(obj.payload, "allow_remote_models", False))
+    catalog = _build_model_catalog()
+    actor_policy = build_actor_policy(actor, allow_remote_models=allow_remote_models)
+    try:
+        decision_meta = resolve_auto_model(
+            AutoModelInputs(
+            actor=actor,
+            endpoint="chat",
+            requested_model=obj.payload.model,
+            max_tokens=obj.payload.max_tokens,
+            temperature=obj.payload.temperature,
+            message_count=len(obj.payload.messages),
+            has_system_prompt=any(m.role == "system" for m in obj.payload.messages),
+            risk_score=None,
+            allow_remote_models=allow_remote_models,
+                messages=[PolicyChatMessage(role=m.role, content=m.content) for m in obj.payload.messages],
+            ),
+            catalog=catalog,
+            policy=actor_policy,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=503, detail=f"auto_model_selection_failed:{str(e)}")
+
     # Call Ollama
     assistant_text = _ollama_chat_openai(
         messages=hist,
-        model=obj.payload.model,
+        model=decision_meta.chosen_model,
         max_tokens=obj.payload.max_tokens,
         temperature=obj.payload.temperature,
     )
@@ -436,17 +569,27 @@ async def v1_chat(obj: ChatRequest, request: Request):
         "stage": "chat",
         "actor": actor,
         "thread_id": thread_id,
-        "model": obj.payload.model,
+        "model": decision_meta.chosen_model,
+        "requested_model": obj.payload.model,
+        "model_meta": decision_meta.__dict__,
         "elapsed_ms": elapsed_ms,
     })
+    logger.info(
+        "auto_model actor=%s endpoint=chat requested_model=%s chosen_model=%s reason=%s escalation=%s",
+        actor,
+        obj.payload.model,
+        decision_meta.chosen_model,
+        decision_meta.reason,
+        decision_meta.escalation,
+    )
     return {
-          "ok": True,
-          "request_id": req_id,
-          "actor": actor,
-          "thread_id": thread_id,
-          "model": obj.payload.model,
-          "assistant": assistant_msg,
-          "elapsed_ms": elapsed_ms,
-        
+        "ok": True,
+        "request_id": req_id,
+        "actor": actor,
+        "thread_id": thread_id,
+        "model": decision_meta.chosen_model,
+        "assistant": assistant_msg,
+        "elapsed_ms": elapsed_ms,
+        "meta": decision_meta.__dict__,
     }
 
