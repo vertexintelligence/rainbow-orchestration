@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "GENX_OUTPUT_CONTRACT_V1.json",
+  "title": "GENX_OUTPUT_CONTRACT_V1",
+  "type": "object",
+  "required": ["meta", "route", "payload", "render"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "required": ["contract", "version", "request_id", "timestamp", "actor", "thread_id", "privacy", "model"],
+      "properties": {
+        "contract": {"const": "GENX_OUTPUT_CONTRACT_V1"},
+        "version": {"const": "1.0.0"},
+        "request_id": {"type": "string"},
+        "timestamp": {"type": "string"},
+        "actor": {"type": "string"},
+        "thread_id": {"type": "string"},
+        "privacy": {"type": "string"},
+        "model": {
+          "type": "object",
+          "required": ["provider", "name"],
+          "properties": {
+            "provider": {"type": "string"},
+            "name": {"type": "string"}
+          }
+        }
+      }
+    },
+    "route": {
+      "type": "object",
+      "required": ["decision", "policy_statuses", "confidence", "fallback_used"],
+      "properties": {
+        "decision": {"type": "string"},
+        "policy_statuses": {"type": "object"},
+        "confidence": {"type": "number"},
+        "fallback_used": {"type": "boolean"}
+      }
+    },
+    "payload": {
+      "type": "object",
+      "required": ["kind", "title", "summary", "items", "actions", "artifacts", "signals"],
+      "properties": {
+        "kind": {"type": "string"},
+        "title": {"type": "string"},
+        "summary": {"type": "string"},
+        "items": {"type": "array"},
+        "actions": {"type": "array"},
+        "artifacts": {"type": "array"},
+        "signals": {
+          "type": "object",
+          "required": ["tags", "warnings"],
+          "properties": {
+            "tags": {
+              "type": "array",
+              "items": {"type": "string"},
+              "minItems": 3,
+              "maxItems": 3
+            },
+            "warnings": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        }
+      }
+    },
+    "render": {
+      "type": "object",
+      "required": ["md"],
+      "properties": {
+        "md": {"type": "string"}
+      }
+    }
+  }
+}
