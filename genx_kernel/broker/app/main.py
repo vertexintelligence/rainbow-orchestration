@@ -13,6 +13,8 @@ import urllib.error
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field
 
+from .contracts.output_contract_v1 import coerce_output_contract_v1
+
 
 # ============================================================
 # ENV + CONFIG
@@ -189,6 +191,8 @@ class ChatPayload(BaseModel):
     max_tokens: int = 200
     temperature: float = 0.2
     model: str = "mistral:latest"
+    output_format: str = Field(default="legacy", pattern="^(legacy|contract_v1)$")
+    tags: Optional[List[str]] = None
 
 
 class ChatRequest(BaseModel):
@@ -424,7 +428,20 @@ async def v1_chat(obj: ChatRequest, request: Request):
         temperature=obj.payload.temperature,
     )
 
-    assistant_msg = {"role": "assistant", "content": assistant_text}
+    assistant_contract: Optional[Dict[str, Any]] = None
+    assistant_content = assistant_text
+    if obj.payload.output_format == "contract_v1":
+        assistant_contract = coerce_output_contract_v1(
+            raw_output=assistant_text,
+            request_id=req_id,
+            actor=actor,
+            thread_id=thread_id,
+            model=obj.payload.model,
+            tags=obj.payload.tags,
+        )
+        assistant_content = assistant_contract["render"]["md"]
+
+    assistant_msg = {"role": "assistant", "content": assistant_content}
     hist.append(assistant_msg)
     _chat_store_put(thread_id, hist)
 
@@ -439,7 +456,7 @@ async def v1_chat(obj: ChatRequest, request: Request):
         "model": obj.payload.model,
         "elapsed_ms": elapsed_ms,
     })
-    return {
+    response_obj = {
           "ok": True,
           "request_id": req_id,
           "actor": actor,
@@ -447,6 +464,7 @@ async def v1_chat(obj: ChatRequest, request: Request):
           "model": obj.payload.model,
           "assistant": assistant_msg,
           "elapsed_ms": elapsed_ms,
-        
     }
-
+    if assistant_contract is not None:
+        response_obj["assistant_contract"] = assistant_contract
+    return response_obj
