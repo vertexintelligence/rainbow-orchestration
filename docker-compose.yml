@@ -40,7 +40,9 @@ services:
     restart: unless-stopped
 
   broker:
-    build: ./genx_kernel/broker
+    build:
+      context: .
+      dockerfile: genx_kernel/broker/Dockerfile
     ports:
       - "8787:8787"
     env_file:
