@@ -1,27 +1,34 @@
 """
 GENX Observatory — Tag List Component
+
+Provides both st.markdown-calling and HTML-returning variants.
 """
 
 import streamlit as st
 from observatory.theme.tokens import safe_text, tone_class
 
 
-def render_tag_list(title: str, items, tone: str = "neutral", inline: bool = False) -> None:
+def tag_list_html(title: str, items, tone: str = "neutral") -> str:
+    """Return tag list as an HTML string for composition into larger blocks."""
     items = items or []
-
-    if not inline:
-        st.markdown('<div class="genx-glass-card">', unsafe_allow_html=True)
-
-    st.markdown(f'<div class="genx-mini-title">{safe_text(title)}</div>', unsafe_allow_html=True)
+    title_html = f'<div class="genx-mini-title">{safe_text(title)}</div>'
 
     if items:
         chips = "".join(
             f'<span class="genx-chip {tone_class(tone)}">{safe_text(item)}</span>'
             for item in items
         )
-        st.markdown(f'<div class="genx-chip-row">{chips}</div>', unsafe_allow_html=True)
+        content = f'<div class="genx-chip-row">{chips}</div>'
     else:
-        st.markdown('<div class="genx-muted">No entries.</div>', unsafe_allow_html=True)
+        content = '<div class="genx-muted">No entries.</div>'
 
-    if not inline:
-        st.markdown("</div>", unsafe_allow_html=True)
+    return title_html + content
+
+
+def render_tag_list(title: str, items, tone: str = "neutral") -> None:
+    """Render tag list as a standalone glass card."""
+    inner = tag_list_html(title, items, tone)
+    st.markdown(
+        f'<div class="genx-glass-card">{inner}</div>',
+        unsafe_allow_html=True,
+    )

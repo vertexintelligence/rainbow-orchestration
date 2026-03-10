@@ -1,66 +1,50 @@
 """
 GENX Observatory — KV Grid Components
 
-Key-value grid renderer and council session card.
+Self-contained key-value grid and council session card.
+All HTML emitted in single st.markdown() calls.
 """
 
 import streamlit as st
 from observatory.theme.tokens import safe_text, tone_class
 from observatory.components.glass_panel import info_card
-from observatory.components.tag_list import render_tag_list
+from observatory.components.tag_list import tag_list_html
+
+
+def _kv_card_html(key: str, value) -> str:
+    """Return a single KV card as an HTML string."""
+    return f"""
+    <div class="genx-kv-card">
+        <div class="genx-kv-label">{safe_text(key)}</div>
+        <div class="genx-kv-value">{safe_text(value)}</div>
+    </div>
+    """
 
 
 def render_kv_grid(title: str, data: dict, columns: int = 2) -> None:
+    """Render a key-value grid inside a glass card. Single st.markdown call."""
     items = list((data or {}).items())
     if not items:
         info_card(title, "No data available.")
         return
 
-    rows = [items[i:i + columns] for i in range(0, len(items), columns)]
+    cards_html = "".join(_kv_card_html(k, v) for k, v in items)
 
-    st.markdown('<div class="genx-glass-card">', unsafe_allow_html=True)
-    st.markdown(f'<div class="genx-mini-title">{safe_text(title)}</div>', unsafe_allow_html=True)
-
-    for row in rows:
-        cols = st.columns(columns)
-        for idx in range(columns):
-            with cols[idx]:
-                if idx < len(row):
-                    k, v = row[idx]
-                    st.markdown(
-                        f"""
-                        <div class="genx-kv-card">
-                            <div class="genx-kv-label">{safe_text(k)}</div>
-                            <div class="genx-kv-value">{safe_text(v)}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-def render_kv_grid_inline(data: dict, columns: int = 2) -> None:
-    items = list((data or {}).items())
-    rows = [items[i:i + columns] for i in range(0, len(items), columns)]
-
-    for row in rows:
-        cols = st.columns(columns)
-        for idx in range(columns):
-            with cols[idx]:
-                if idx < len(row):
-                    k, v = row[idx]
-                    st.markdown(
-                        f"""
-                        <div class="genx-kv-card">
-                            <div class="genx-kv-label">{safe_text(k)}</div>
-                            <div class="genx-kv-value">{safe_text(v)}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+    st.markdown(
+        f"""
+        <div class="genx-glass-card">
+            <div class="genx-mini-title">{safe_text(title)}</div>
+            <div class="genx-kv-grid" style="grid-template-columns: repeat({columns}, 1fr);">
+                {cards_html}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def render_council_session_card(data: dict) -> None:
+    """Render the council session card. Single st.markdown call."""
     if not data:
         info_card("Council Session", "No council telemetry available.")
         return
@@ -76,11 +60,20 @@ def render_council_session_card(data: dict) -> None:
         "alignment_status": data.get("alignment_status", "unknown"),
     }
 
-    st.markdown('<div class="genx-glass-card">', unsafe_allow_html=True)
-    st.markdown('<div class="genx-mini-title">Council Session Core</div>', unsafe_allow_html=True)
+    kv_cards = "".join(_kv_card_html(k, v) for k, v in top_fields.items())
+    support_html = tag_list_html("Supporting Roles", data.get("supporting_roles", []), tone="good")
+    dissent_html = tag_list_html("Dissenting Roles", data.get("dissenting_roles", []), tone="warn")
 
-    render_kv_grid_inline(top_fields, columns=2)
-    render_tag_list("Supporting Roles", data.get("supporting_roles", []), tone="good", inline=True)
-    render_tag_list("Dissenting Roles", data.get("dissenting_roles", []), tone="warn", inline=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="genx-glass-card">
+            <div class="genx-mini-title">Council Session Core</div>
+            <div class="genx-kv-grid" style="grid-template-columns: repeat(2, 1fr);">
+                {kv_cards}
+            </div>
+            {support_html}
+            {dissent_html}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

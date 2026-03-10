@@ -1,7 +1,7 @@
 """Knowledge Graph Intelligence section renderer."""
 
 import streamlit as st
-from observatory.components.glass_panel import section_title
+from observatory.components.glass_panel import section_title, section_divider
 from observatory.components.metric_card import metric_card
 
 
@@ -26,4 +26,4 @@ def render_knowledge_graph_section(state: dict) -> None:
     with kg6:
         metric_card("Tool Executions", str(kg.get("tool_execution_count", 0)), "neutral", compact=True)
 
-    st.markdown("---")
+    section_divider()

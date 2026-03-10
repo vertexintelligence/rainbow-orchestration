@@ -1,7 +1,7 @@
 """Tool Execution Panel section renderer."""
 
 import streamlit as st
-from observatory.components.glass_panel import section_title
+from observatory.components.glass_panel import section_title, section_divider
 from observatory.components.kv_grid import render_kv_grid
 
 
@@ -17,4 +17,4 @@ def render_tool_execution_section(state: dict) -> None:
     with tool_right:
         render_kv_grid("Latest Tool Execution", state.get("tools", {}).get("latest_tool_execution", {}), columns=2)
 
-    st.markdown("---")
+    section_divider()

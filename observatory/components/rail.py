@@ -7,7 +7,8 @@ import streamlit as st
 from observatory.theme.tokens import safe_text, tone_class, status_tone
 
 
-def rail_item(label: str, value: str, tone: str = "neutral") -> str:
+def rail_item_html(label: str, value: str, tone: str = "neutral") -> str:
+    """Return a single rail item as an HTML string."""
     return f"""
 <div class="genx-rail-item {tone_class(tone)}">
     <div class="genx-rail-label">{safe_text(label)}</div>
@@ -30,12 +31,12 @@ def render_command_rail(state: dict) -> None:
         </div>
 
         <div class="genx-rail-stack">
-            {rail_item("Environment", system.get("environment", "UNKNOWN"), "neutral")}
-            {rail_item("Status", system.get("status", "unknown"), status_tone(system.get("status", "unknown")))}
-            {rail_item("Council Route", governance.get("authority_action", "unknown"), "neutral")}
-            {rail_item("Risk Band", risk_monitor.get("live_risk_band", "unknown"), status_tone(risk_monitor.get("live_risk_band", "unknown")))}
-            {rail_item("Active Missions", str(mission_control.get("active_count", 0)), "neutral")}
-            {rail_item("Signals", str(len(state.get("alerts", []))), "warn")}
+            {rail_item_html("Environment", system.get("environment", "UNKNOWN"), "neutral")}
+            {rail_item_html("Status", system.get("status", "unknown"), status_tone(system.get("status", "unknown")))}
+            {rail_item_html("Council Route", governance.get("authority_action", "unknown"), "neutral")}
+            {rail_item_html("Risk Band", risk_monitor.get("live_risk_band", "unknown"), status_tone(risk_monitor.get("live_risk_band", "unknown")))}
+            {rail_item_html("Active Missions", str(mission_control.get("active_count", 0)), "neutral")}
+            {rail_item_html("Signals", str(len(state.get("alerts", []))), "warn")}
         </div>
     </div>
     """).strip()

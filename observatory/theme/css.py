@@ -1,21 +1,21 @@
 """
 GENX Observatory CSS
 
-Returns the unified V4 glass panel stylesheet as a string.
+Returns the unified V4.2 glass panel stylesheet.
 """
 
 import streamlit as st
 
 
 def inject_stylesheet() -> None:
-    """Inject the GENX Observatory V4 stylesheet into the Streamlit page."""
+    """Inject the GENX Observatory V4.2 stylesheet into the Streamlit page."""
     st.markdown(_STYLESHEET, unsafe_allow_html=True)
 
 
 _STYLESHEET = """
 <style>
 /* ======================================================
-   GENX OBSERVATORY V4 — UNIFIED GLASS PANEL SYSTEM
+   GENX OBSERVATORY V4.2 — UNIFIED GLASS PANEL SYSTEM
    ====================================================== */
 
 .stApp {
@@ -43,14 +43,51 @@ p, li, label, .stCaption, .stMarkdown {
     color: #9fb4c8 !important;
 }
 
-hr {
-    border: none;
+/* ---- Section Divider ---- */
+.genx-section-divider {
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(0,255,200,0.22), transparent);
-    margin: 1.5rem 0 1.4rem 0;
+    background: linear-gradient(90deg, transparent, rgba(0,255,200,0.18), transparent);
+    margin: 2rem 0;
 }
 
-/* Hero */
+/* ---- Section Titles — Tier System ---- */
+.genx-section-wrap {
+    margin-top: 0.25rem;
+    margin-bottom: 0.8rem;
+}
+
+.genx-section-title {
+    color: #f5fbff;
+    font-size: 1.55rem;
+    font-weight: 700;
+    margin-bottom: 0.18rem;
+}
+
+.genx-section-caption {
+    color: #8da4b9;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+
+/* Primary tier — command-level sections */
+.genx-section-wrap--primary {
+    margin-top: 0.35rem;
+    margin-bottom: 1rem;
+    padding-left: 0.9rem;
+    border-left: 4px solid rgba(0,255,200,0.35);
+}
+
+.genx-section-wrap--primary .genx-section-title {
+    font-size: 2.1rem;
+    font-weight: 850;
+}
+
+.genx-section-wrap--primary .genx-section-caption {
+    font-size: 1rem;
+    color: #9fb4c8;
+}
+
+/* ---- Hero ---- */
 .genx-hero {
     position: relative;
     overflow: hidden;
@@ -86,6 +123,7 @@ hr {
     margin-bottom: 1rem;
 }
 
+/* ---- Pills ---- */
 .genx-pill-row {
     display: flex;
     flex-wrap: wrap;
@@ -115,6 +153,7 @@ hr {
     font-weight: 700;
 }
 
+/* ---- Tone System ---- */
 .genx-tone-good {
     border-color: rgba(0,255,200,0.22) !important;
     box-shadow: 0 0 18px rgba(0,255,200,0.08);
@@ -134,26 +173,7 @@ hr {
     border-color: rgba(110,168,255,0.18) !important;
 }
 
-/* Section */
-.genx-section-wrap {
-    margin-top: 0.25rem;
-    margin-bottom: 0.8rem;
-}
-
-.genx-section-title {
-    color: #f5fbff;
-    font-size: 1.85rem;
-    font-weight: 800;
-    margin-bottom: 0.18rem;
-}
-
-.genx-section-caption {
-    color: #8da4b9;
-    font-size: 0.98rem;
-    line-height: 1.5;
-}
-
-/* Expander */
+/* ---- Expander ---- */
 details {
     background: rgba(7,15,25,0.95);
     border: 1px solid rgba(255,255,255,0.07);
@@ -166,7 +186,7 @@ summary {
     font-weight: 700 !important;
 }
 
-/* Signals / warning */
+/* ---- Signals / warning ---- */
 div[data-baseweb="notification"] {
     border-radius: 18px !important;
     border: 1px solid rgba(255,196,0,0.18) !important;
@@ -176,7 +196,7 @@ div[data-baseweb="notification"] {
     box-shadow: 0 12px 28px rgba(0,0,0,0.18);
 }
 
-/* JSON viewer */
+/* ---- JSON viewer ---- */
 div[data-testid="stJson"] {
     background: rgba(8,16,27,0.94);
     border: 1px solid rgba(0,255,200,0.14);
@@ -185,7 +205,7 @@ div[data-testid="stJson"] {
     box-shadow: 0 14px 35px rgba(0,0,0,0.24);
 }
 
-/* Signal cards */
+/* ---- Signal cards ---- */
 .genx-signal-card {
     background: linear-gradient(90deg, rgba(70,52,8,0.95), rgba(48,35,6,0.96));
     border: 1px solid rgba(255,196,0,0.18);
@@ -198,10 +218,10 @@ div[data-testid="stJson"] {
     line-height: 1.5;
 }
 
-/* Small custom cards */
+/* ---- Info cards ---- */
 .genx-info-card {
     border-radius: 20px;
-    padding: 1rem 0.95rem 1rem;
+    padding: 1rem 0.95rem;
     background: rgba(8,16,27,0.94);
     border: 1px solid rgba(98,224,255,0.14);
     box-shadow: 0 14px 35px rgba(0,0,0,0.22);
@@ -224,7 +244,7 @@ div[data-testid="stJson"] {
     line-height: 1.5;
 }
 
-/* Metric cards */
+/* ---- Metric cards ---- */
 .genx-metric-card {
     background: linear-gradient(180deg, rgba(9,18,30,0.94), rgba(7,16,26,0.98));
     border: 1px solid rgba(0, 224, 255, 0.14);
@@ -259,7 +279,7 @@ div[data-testid="stJson"] {
     overflow-wrap: anywhere;
 }
 
-/* Glass cards */
+/* ---- Glass cards ---- */
 .genx-glass-card {
     background: linear-gradient(180deg, rgba(10,18,28,0.82), rgba(7,13,22,0.94));
     border: 1px solid rgba(0, 224, 255, 0.12);
@@ -276,13 +296,18 @@ div[data-testid="stJson"] {
     margin-bottom: 0.8rem;
 }
 
+/* ---- KV Grid (CSS grid layout) ---- */
+.genx-kv-grid {
+    display: grid;
+    gap: 0.6rem;
+}
+
 .genx-kv-card {
     background: rgba(11, 23, 38, 0.82);
     border: 1px solid rgba(255,255,255,0.06);
     border-radius: 18px;
     padding: 0.9rem;
     min-height: 86px;
-    margin-bottom: 0.8rem;
 }
 
 .genx-kv-label {
@@ -303,10 +328,12 @@ div[data-testid="stJson"] {
     overflow-wrap: anywhere;
 }
 
+/* ---- Chips ---- */
 .genx-chip-row {
     display: flex;
     flex-wrap: wrap;
     gap: 0.55rem;
+    margin-top: 0.35rem;
 }
 
 .genx-chip {
@@ -343,7 +370,7 @@ div[data-testid="stJson"] {
     font-size: 0.95rem;
 }
 
-/* Command Rail — horizontal bar */
+/* ---- Command Rail ---- */
 .genx-rail {
     border-radius: 26px;
     padding: 1.2rem;
@@ -399,7 +426,7 @@ div[data-testid="stJson"] {
     word-break: break-word;
 }
 
-/* Glass panel */
+/* ---- Glass panel ---- */
 .genx-glass-panel {
     background: linear-gradient(180deg, rgba(10,22,36,0.90), rgba(8,18,30,0.94));
     border: 1px solid rgba(0,255,200,0.12);
@@ -409,7 +436,7 @@ div[data-testid="stJson"] {
     margin-bottom: 1rem;
 }
 
-/* Radar grid */
+/* ---- Radar grid ---- */
 .genx-radar-grid {
     display: grid;
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -442,7 +469,7 @@ div[data-testid="stJson"] {
     word-break: break-word;
 }
 
-/* Styled HTML tables (replaces st.dataframe) */
+/* ---- Styled HTML tables ---- */
 .genx-table {
     width: 100%;
     border-collapse: separate;
@@ -450,14 +477,15 @@ div[data-testid="stJson"] {
 }
 
 .genx-table-th {
-    color: #7db7dd;
-    font-size: 0.74rem;
+    color: #9fc8e6;
+    font-size: 0.76rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    padding: 0.7rem 0.85rem;
+    padding: 0.75rem 0.85rem;
     text-align: left;
-    border-bottom: 1px solid rgba(255,255,255,0.08);
+    background: rgba(0,0,0,0.18);
+    border-bottom: 2px solid rgba(0,224,255,0.14);
 }
 
 .genx-table-td {
@@ -469,6 +497,10 @@ div[data-testid="stJson"] {
     line-height: 1.4;
 }
 
+.genx-table tbody tr:nth-child(even) .genx-table-td {
+    background: rgba(255,255,255,0.02);
+}
+
 .genx-table tbody tr:last-child .genx-table-td {
     border-bottom: none;
 }
@@ -477,7 +509,20 @@ div[data-testid="stJson"] {
     background: rgba(96, 165, 250, 0.06);
 }
 
-/* Responsive */
+/* Tone-aware table cells */
+.genx-table-td--good {
+    color: #8ff0bf !important;
+}
+
+.genx-table-td--warn {
+    color: #ffd57a !important;
+}
+
+.genx-table-td--bad {
+    color: #ff8a8a !important;
+}
+
+/* ---- Responsive ---- */
 @media (max-width: 1200px) {
     .genx-radar-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));

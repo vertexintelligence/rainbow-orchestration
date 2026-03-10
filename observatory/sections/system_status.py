@@ -1,7 +1,7 @@
 """System Status section renderer."""
 
 import streamlit as st
-from observatory.components.glass_panel import section_title
+from observatory.components.glass_panel import section_title, section_divider
 from observatory.components.metric_card import metric_card
 from observatory.theme.tokens import status_tone
 
@@ -12,6 +12,7 @@ def render_system_status_section(state: dict) -> None:
     section_title(
         "System Status",
         "Foundational operational posture of the GENX civilization stack.",
+        tier="primary",
     )
 
     col1, col2, col3, col4 = st.columns(4)
@@ -24,4 +25,4 @@ def render_system_status_section(state: dict) -> None:
     with col4:
         metric_card("Registered Tools", str(state.get("tools", {}).get("registered_tools", 0)), "neutral")
 
-    st.markdown("---")
+    section_divider()

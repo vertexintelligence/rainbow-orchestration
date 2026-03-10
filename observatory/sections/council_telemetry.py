@@ -1,7 +1,7 @@
 """Council Telemetry section renderer."""
 
 import streamlit as st
-from observatory.components.glass_panel import section_title
+from observatory.components.glass_panel import section_title, section_divider
 from observatory.components.kv_grid import render_council_session_card
 from observatory.components.styled_table import render_styled_table
 
@@ -18,4 +18,4 @@ def render_council_telemetry_section(state: dict) -> None:
     with ct_right:
         render_styled_table("Governance Timeline", state.get("governance_timeline", []))
 
-    st.markdown("---")
+    section_divider()

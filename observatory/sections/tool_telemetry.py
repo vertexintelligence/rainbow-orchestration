@@ -1,7 +1,7 @@
 """Tool Telemetry section renderer."""
 
 import streamlit as st
-from observatory.components.glass_panel import section_title
+from observatory.components.glass_panel import section_title, section_divider
 from observatory.components.metric_card import metric_card
 from observatory.components.kv_grid import render_kv_grid
 from observatory.components.styled_table import render_styled_table
@@ -32,4 +32,4 @@ def render_tool_telemetry_section(state: dict) -> None:
     with tool_right:
         render_styled_table("Recent Tool Activity", tt.get("recent_activity", []))
 
-    st.markdown("---")
+    section_divider()

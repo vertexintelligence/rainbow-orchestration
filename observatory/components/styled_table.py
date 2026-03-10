@@ -2,11 +2,35 @@
 GENX Observatory — Styled Table Component
 
 Renders list-of-dicts as a dark-themed HTML table inside a glass card.
+Detects known status values and applies tone coloring.
 """
 
 import streamlit as st
 from observatory.theme.tokens import safe_text
 from observatory.components.glass_panel import info_card
+
+_TONE_VALUES = {
+    "approved": "good",
+    "operational": "good",
+    "active": "good",
+    "good": "good",
+    "blocked": "bad",
+    "block": "bad",
+    "critical": "bad",
+    "sandbox_exec": "neutral",
+    "live_exec": "warn",
+    "request_evaluator_review": "warn",
+    "guarded": "warn",
+    "review": "warn",
+    "warning": "warn",
+}
+
+
+def _cell_html(value: str) -> str:
+    """Render a table cell with optional tone coloring."""
+    tone = _TONE_VALUES.get(str(value).lower().strip(), "")
+    tone_cls = f" genx-table-td--{tone}" if tone else ""
+    return f'<td class="genx-table-td{tone_cls}">{safe_text(value)}</td>'
 
 
 def render_styled_table(title: str, rows: list) -> None:
@@ -22,10 +46,7 @@ def render_styled_table(title: str, rows: list) -> None:
 
     body_html = ""
     for row in rows:
-        cells = "".join(
-            f'<td class="genx-table-td">{safe_text(row.get(h, ""))}</td>'
-            for h in headers
-        )
+        cells = "".join(_cell_html(row.get(h, "")) for h in headers)
         body_html += f"<tr>{cells}</tr>"
 
     st.markdown(
